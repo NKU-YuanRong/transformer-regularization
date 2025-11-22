@@ -1,0 +1,5 @@
+torch
+torchvision
+vit-pytorch
+wandb
+tqdm

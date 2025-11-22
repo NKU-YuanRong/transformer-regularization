@@ -1,0 +1,86 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Compiled extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+venv/
+.venv/
+build/
+dist/
+.eggs/
+*.egg
+*.egg-info/
+.installed.cfg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+.coverage
+.coverage.*
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+pytest_cache/
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# VS Code settings
+.vscode/
+
+# IDE directories
+.idea/
+
+# macOS
+.DS_Store
+
+# Logs & artifacts
+*.log
+performance_log/*
+model/*
+# Keep directories themselves (optional):
+!performance_log/.gitkeep
+!model/.gitkeep
+
+# Torch / model weights
+*.pt
+*.pth
+
+# Data downloads (large)
+data/FashionMNIST/raw/*
+# If you add processed datasets you can ignore them too:
+# data/processed/*
+
+# WandB artifacts
+wandb/
+
+# Local environment variables / secrets (add file name if used)
+.env
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Coverage HTML
+htmlcov/
+
+# Mypy cache
+.mypy_cache/
+
+# Ruff / lint caches
+.ruff_cache/
+
+# Pylance cache (if any)
+.pylance/
