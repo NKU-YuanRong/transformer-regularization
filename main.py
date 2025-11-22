@@ -61,10 +61,11 @@ def main(args):
             'experiment_name': args.experiment_name,
             'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
             'epochs': args.epochs,
-            'train_loss': history['train_loss'],
-            'test_loss': history['test_loss'],
-            'test_acc': history['test_acc'],
-            'final_test_accuracy': history['test_acc'][-1] if history['test_acc'] else None
+            'train_loss': history.get('train_loss', []),
+            'train_acc': history.get('train_acc', []),
+            'test_loss': history.get('test_loss', []),
+            'test_acc': history.get('test_acc', []),
+            'final_test_accuracy': history['test_acc'][-1] if history.get('test_acc') else None
         }
         with open(perf_save_file, 'w') as f:
             json.dump(log_payload, f, indent=2)

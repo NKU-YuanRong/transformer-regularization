@@ -11,12 +11,13 @@ class Trainer:
         self.scheduler = scheduler
 
     def fit(self, train_loader, test_loader, epochs, use_mixup=False):
-        history = { 'train_loss': [], 'test_loss': [], 'test_acc': [] }
+        history = { 'train_loss': [], 'train_acc': [], 'test_loss': [], 'test_acc': [] }
         for epoch in range(epochs):
             train_loss, train_acc = self.train_one_epoch(train_loader, use_mixup)
             test_loss, test_acc = self.evaluate(test_loader)
 
             history['train_loss'].append(train_loss)
+            history['train_acc'].append(train_acc)
             history['test_loss'].append(test_loss)
             history['test_acc'].append(test_acc)
 
