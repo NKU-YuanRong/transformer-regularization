@@ -6,7 +6,7 @@ def get_dataloaders(args):
     """
     Creates dataloaders with the specific augmentation strategy chosen by the user.
     """
-    
+
     # Base transforms (Normalization is always required)
     base_transform_list = [
         transforms.Resize((32, 32)),
@@ -14,17 +14,34 @@ def get_dataloaders(args):
         transforms.Normalize((0.5,), (0.5,))
     ]
 
-    # MEMBER 2 TASK: Insert Augmentations here based on args.aug_type
-    # The logic is: Raw Image -> Augmentation -> Tensor -> Normalize
-    if args.aug_type == 'autoaugment':
-        # We insert AutoAugment at the beginning
-        base_transform_list.insert(0, transforms.AutoAugment(transforms.AutoAugmentPolicy.CIFAR10))
-    elif args.aug_type == 'randaugment':
-        # TODO: Member 2 implement RandAugment here
-        pass
+    # Augment: Start with basic Geometric transforms (PIL Input -> PIL Output)
+    train_transform_list = [
+        transforms.Resize((32, 32))
+    ]
 
-    train_transform = transforms.Compose(base_transform_list)
-    
+    # Logic: These must happen AFTER Resize but BEFORE ToTensor
+    if args.aug_type == 'autoaugment':
+        # AutoAugment: Learns the best augmentation policy (using CIFAR10 policy for small images)
+        train_transform_list.append(transforms.AutoAugment(transforms.AutoAugmentPolicy.CIFAR10))
+
+    elif args.aug_type == 'randaugment':
+        # RandAugment: Randomly applies 'num_ops' operations with magnitude 'magnitude'
+        # This is often more effective/robust than AutoAugment
+        train_transform_list.append(transforms.RandAugment(num_ops=2, magnitude=9))
+
+    # Augment: Add the necessary Conversion transforms (PIL Output -> Tensor)
+    train_transform_list.extend([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+
+    if args.aug_type == 'autoaugment' or args.aug_type == 'randaugment':
+        # Compose the final training transform, using augmentation
+        train_transform = transforms.Compose(train_transform_list)
+    else:
+        # baseline transform
+        train_transform = transforms.Compose(base_transform_list)
+
     # Test transform should never have augmentation (except resize/norm)
     test_transform = transforms.Compose([
         transforms.Resize((32, 32)),
