@@ -17,7 +17,7 @@ def main(args):
     # wandb.init(project="fashion-vit-group", name=args.experiment_name, config=args)
 
     # 2. Data (Member 2's Domain)
-    train_loader, test_loader = get_dataloaders(args)
+    train_loader, val_loader, test_loader = get_dataloaders(args)
 
     # 3. Model
     model = get_model(args).to(device)
@@ -43,7 +43,12 @@ def main(args):
     # 6. Run Loop
     print(f"Starting experiment: {args.experiment_name}")
     # Fit returns nothing currently; we'll modify Trainer to return metrics
-    history = trainer.fit(train_loader, test_loader, epochs=args.epochs, use_mixup=args.use_mixup, mixup_alpha=args.mixup_alpha)
+    history = trainer.fit(train_loader, val_loader, epochs=args.epochs, use_mixup=args.use_mixup, mixup_alpha=args.mixup_alpha)
+
+    # 7. Final Evaluation on Test Set
+    print("Running final evaluation on the held-out Test Set...")
+    test_loss, test_acc = trainer.evaluate(test_loader)
+    print(f"Final Test Accuracy: {test_acc:.2f}%")
 
     # Save artifacts if requested
     if args.save_path:
