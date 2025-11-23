@@ -86,6 +86,22 @@ W&B integration is scaffolded but currently commented out in `main.py`. To enabl
 - Make ViT hyperparameters configurable via argparse.
 - Early stopping and checkpointing best validation accuracy.
 - Add unit tests for data pipeline and training loop.
+- Enhance plotting script for smoothing and interactive backend.
+
+## Plotting Curves
+You can visualize loss and accuracy across experiments using the helper script:
+```bash
+python scripts/draw_curve.py run1.pt run2.pt
+```
+Arguments can omit the `.pt` extension:
+```bash
+python scripts/draw_curve.py run1 run2
+```
+The script reads each JSON log from `performance_log/` and produces a figure with:
+- Train/Test Loss (left)
+- Train/Test Accuracy (right)
+
+It saves the figure as `performance_log/curves_<timestamp>.png` and also displays it.
 
 ## Troubleshooting
 | Issue | Possible Fix |
