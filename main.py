@@ -12,7 +12,7 @@ def main(args):
     # 1. Setup
     set_seed(42)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+    
     # Initialize Weights & Biases for professional plotting
     # wandb.init(project="fashion-vit-group", name=args.experiment_name, config=args)
 
@@ -43,7 +43,7 @@ def main(args):
     # 6. Run Loop
     print(f"Starting experiment: {args.experiment_name}")
     # Fit returns nothing currently; we'll modify Trainer to return metrics
-    history = trainer.fit(train_loader, val_loader, epochs=args.epochs, use_mixup=args.use_mixup)
+    history = trainer.fit(train_loader, val_loader, epochs=args.epochs, use_mixup=args.use_mixup, mixup_alpha=args.mixup_alpha)
 
     # 7. Final Evaluation on Test Set
     print("Running final evaluation on the held-out Test Set...")
@@ -68,8 +68,8 @@ def main(args):
             'epochs': args.epochs,
             'train_loss': history.get('train_loss', []),
             'train_acc': history.get('train_acc', []),
-            'val_loss': history.get('val_loss', []),
-            'val_acc': history.get('val_acc', []),
+            'test_loss': history.get('test_loss', []),
+            'test_acc': history.get('test_acc', []),
             'final_test_accuracy': history['test_acc'][-1] if history.get('test_acc') else None
         }
         with open(perf_save_file, 'w') as f:
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     
     # Basic Config
     parser.add_argument('--experiment_name', type=str, default='baseline')
-    parser.add_argument('--epochs', type=int, default=30)
+    parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--lr', type=float, default=0.0001)
 
@@ -94,6 +94,7 @@ if __name__ == "__main__":
 
     # MEMBER 3: MixUp
     parser.add_argument('--use_mixup', action='store_true', help="Enable MixUp training")
+    parser.add_argument('--mixup_alpha', type=float, default=0.4, help="MixUp alpha (Beta distribution parameter)")
 
     # MEMBER 4: Scheduler & Loss
     parser.add_argument('--use_scheduler', action='store_true', help="Use Learning Rate Scheduler")
