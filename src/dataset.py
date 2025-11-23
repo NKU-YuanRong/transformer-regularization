@@ -1,58 +1,97 @@
 import torch
+import numpy as np
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
+
 
 def get_dataloaders(args):
     """
-    Creates dataloaders with the specific augmentation strategy chosen by the user.
+    Creates dataloaders with a Train/Validation/Test split.
+
+    CRITICAL:
+    - If no aug-type argument, use baseline dataset without data augmentation
+    - Training set applies data augmentation (if selected).
+    - Validation set does NOT apply augmentation (uses clean images).
+    - Test set is reserved for final evaluation only.
     """
 
-    # Base transforms (Normalization is always required)
-    base_transform_list = [
-        transforms.Resize((32, 32)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
-    ]
+    # -----------------------------------------------------------
+    # 1. Define Transforms
+    # -----------------------------------------------------------
 
-    # Augment: Start with basic Geometric transforms (PIL Input -> PIL Output)
+    # A. Build the Training Transform (Potential Augmentation)
+    # Start with PIL-level transforms
     train_transform_list = [
         transforms.Resize((32, 32))
     ]
 
-    # Logic: These must happen AFTER Resize but BEFORE ToTensor
+    # Logic: Augmentations must happen AFTER Resize but BEFORE ToTensor
     if args.aug_type == 'autoaugment':
-        # AutoAugment: Learns the best augmentation policy (using CIFAR10 policy for small images)
+        print(f"[Data] Applying AutoAugment (CIFAR10 Policy)")
         train_transform_list.append(transforms.AutoAugment(transforms.AutoAugmentPolicy.CIFAR10))
-
     elif args.aug_type == 'randaugment':
-        # RandAugment: Randomly applies 'num_ops' operations with magnitude 'magnitude'
-        # This is often more effective/robust than AutoAugment
+        print(f"[Data] Applying RandAugment")
         train_transform_list.append(transforms.RandAugment(num_ops=2, magnitude=9))
 
-    # Augment: Add the necessary Conversion transforms (PIL Output -> Tensor)
+    # Add final conversion steps
     train_transform_list.extend([
         transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))
     ])
 
-    if args.aug_type == 'autoaugment' or args.aug_type == 'randaugment':
-        # Compose the final training transform, using augmentation
-        train_transform = transforms.Compose(train_transform_list)
-    else:
-        # baseline transform
-        train_transform = transforms.Compose(base_transform_list)
+    train_transform = transforms.Compose(train_transform_list)
 
-    # Test transform should never have augmentation (except resize/norm)
-    test_transform = transforms.Compose([
+    # B. Build the Evaluation Transform (Validation/Test)
+    # Pure clean data: Resize -> Tensor -> Normalize
+    eval_transform = transforms.Compose([
         transforms.Resize((32, 32)),
         transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))
     ])
 
-    train_dataset = datasets.FashionMNIST(root='./data', train=True, download=True, transform=train_transform)
-    test_dataset = datasets.FashionMNIST(root='./data', train=False, download=True, transform=test_transform)
+    # -----------------------------------------------------------
+    # 2. Load Datasets
+    # -----------------------------------------------------------
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=2)
+    # We load the training source data TWICE to ensure data hygiene:
+    # 1. Source with Augmentation (for the final Training subset)
+    train_source_aug = datasets.FashionMNIST(root='./data', train=True, download=True, transform=train_transform)
+
+    # 2. Source without Augmentation (for the Validation subset)
+    train_source_clean = datasets.FashionMNIST(root='./data', train=True, download=True, transform=eval_transform)
+
+    # Load separate Test set
+    test_dataset = datasets.FashionMNIST(root='./data', train=False, download=True, transform=eval_transform)
+
+    # -----------------------------------------------------------
+    # 3. Create Train/Val Split (1:9 Ratio)
+    # -----------------------------------------------------------
+    num_total_train = len(train_source_aug)  # 60,000
+    indices = list(range(num_total_train))
+
+    # Split ratio: 10% for Validation, 90% for Training
+    val_split = int(np.floor(0.1 * num_total_train))  # 6,000 images
+
+    # Shuffle indices to ensure random split
+    # Note: Assuming set_seed() was called in main.py for reproducibility
+    np.random.shuffle(indices)
+
+    # Slice the indices
+    train_idx, val_idx = indices[val_split:], indices[:val_split]
+
+    # Create Subsets
+    # Train subset uses the AUGMENTED source
+    train_subset = Subset(train_source_aug, train_idx)
+    # Validation subset uses the CLEAN source
+    val_subset = Subset(train_source_clean, val_idx)
+
+    print(f"[Data] Split Summary: Train: {len(train_subset)} | Val: {len(val_subset)} | Test: {len(test_dataset)}")
+
+    # -----------------------------------------------------------
+    # 4. Create DataLoaders
+    # -----------------------------------------------------------
+    train_loader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True, num_workers=2)
+    val_loader = DataLoader(val_subset, batch_size=args.batch_size, shuffle=False, num_workers=2)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
 
-    return train_loader, test_loader
+    return train_loader, val_loader, test_loader

@@ -12,12 +12,12 @@ def main(args):
     # 1. Setup
     set_seed(42)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+
     # Initialize Weights & Biases for professional plotting
     # wandb.init(project="fashion-vit-group", name=args.experiment_name, config=args)
 
     # 2. Data (Member 2's Domain)
-    train_loader, test_loader = get_dataloaders(args)
+    train_loader, val_loader, test_loader = get_dataloaders(args)
 
     # 3. Model
     model = get_model(args).to(device)
@@ -43,7 +43,12 @@ def main(args):
     # 6. Run Loop
     print(f"Starting experiment: {args.experiment_name}")
     # Fit returns nothing currently; we'll modify Trainer to return metrics
-    history = trainer.fit(train_loader, test_loader, epochs=args.epochs, use_mixup=args.use_mixup)
+    history = trainer.fit(train_loader, val_loader, epochs=args.epochs, use_mixup=args.use_mixup)
+
+    # 7. Final Evaluation on Test Set
+    print("Running final evaluation on the held-out Test Set...")
+    test_loss, test_acc = trainer.evaluate(test_loader)
+    print(f"Final Test Accuracy: {test_acc:.2f}%")
 
     # Save artifacts if requested
     if args.save_path:
@@ -63,8 +68,8 @@ def main(args):
             'epochs': args.epochs,
             'train_loss': history.get('train_loss', []),
             'train_acc': history.get('train_acc', []),
-            'test_loss': history.get('test_loss', []),
-            'test_acc': history.get('test_acc', []),
+            'val_loss': history.get('val_loss', []),
+            'val_acc': history.get('val_acc', []),
             'final_test_accuracy': history['test_acc'][-1] if history.get('test_acc') else None
         }
         with open(perf_save_file, 'w') as f:

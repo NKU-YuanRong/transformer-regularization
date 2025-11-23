@@ -10,24 +10,24 @@ class Trainer:
         self.device = device
         self.scheduler = scheduler
 
-    def fit(self, train_loader, test_loader, epochs, use_mixup=False):
-        history = { 'train_loss': [], 'train_acc': [], 'test_loss': [], 'test_acc': [] }
+    def fit(self, train_loader, val_loader, epochs, use_mixup=False):
+        history = { 'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': [] }
         for epoch in range(epochs):
             train_loss, train_acc = self.train_one_epoch(train_loader, use_mixup)
-            test_loss, test_acc = self.evaluate(test_loader)
+            val_loss, val_acc = self.evaluate(val_loader)
 
             history['train_loss'].append(train_loss)
             history['train_acc'].append(train_acc)
-            history['test_loss'].append(test_loss)
-            history['test_acc'].append(test_acc)
+            history['val_loss'].append(val_loss)
+            history['val_acc'].append(val_acc)
 
             # MEMBER 4 TASK: Step the scheduler
             if self.scheduler:
                 self.scheduler.step()
 
             # Log to WandB and Console
-            print(f"Epoch {epoch+1}/{epochs} | Train Loss: {train_loss:.4f} Acc: {train_acc:.2f}% | Test Loss: {test_loss:.4f} Acc: {test_acc:.2f}%")
-            # wandb.log({"train_loss": train_loss, "test_acc": test_acc, "epoch": epoch})
+            print(f"Epoch {epoch+1}/{epochs} | Train Loss: {train_loss:.4f} Acc: {train_acc:.2f}% | Val Loss: {val_loss:.4f} Acc: {val_acc:.2f}%")
+            # wandb.log({"train_loss": train_loss, "val_acc": val_acc, "epoch": epoch})
 
         return history
 
