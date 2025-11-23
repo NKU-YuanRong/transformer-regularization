@@ -70,7 +70,8 @@ def main(args):
             'train_acc': history.get('train_acc', []),
             'val_loss': history.get('val_loss', []),
             'val_acc': history.get('val_acc', []),
-            'final_test_accuracy': history['test_acc'][-1] if history.get('test_acc') else None
+            'final_test_accuracy': test_acc,
+            'final_test_loss': test_loss
         }
         with open(perf_save_file, 'w') as f:
             json.dump(log_payload, f, indent=2)
