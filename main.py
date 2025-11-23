@@ -43,7 +43,7 @@ def main(args):
     # 6. Run Loop
     print(f"Starting experiment: {args.experiment_name}")
     # Fit returns nothing currently; we'll modify Trainer to return metrics
-    history = trainer.fit(train_loader, test_loader, epochs=args.epochs, use_mixup=args.use_mixup)
+    history = trainer.fit(train_loader, test_loader, epochs=args.epochs, use_mixup=args.use_mixup, mixup_alpha=args.mixup_alpha)
 
     # Save artifacts if requested
     if args.save_path:
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     
     # Basic Config
     parser.add_argument('--experiment_name', type=str, default='baseline')
-    parser.add_argument('--epochs', type=int, default=30)
+    parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--lr', type=float, default=0.0001)
 
@@ -89,6 +89,7 @@ if __name__ == "__main__":
 
     # MEMBER 3: MixUp
     parser.add_argument('--use_mixup', action='store_true', help="Enable MixUp training")
+    parser.add_argument('--mixup_alpha', type=float, default=0.4, help="MixUp alpha (Beta distribution parameter)")
 
     # MEMBER 4: Scheduler & Loss
     parser.add_argument('--use_scheduler', action='store_true', help="Use Learning Rate Scheduler")
