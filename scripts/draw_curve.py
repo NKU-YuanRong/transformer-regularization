@@ -50,12 +50,12 @@ def plot_histories(histories: dict):
         epochs = range(1, len(h.get('train_loss', [])) + 1)
         if h.get('train_loss'):
             ax_loss.plot(epochs, h['train_loss'], label=f'{name} Train Loss', linestyle='-')
-        if h.get('test_loss'):
-            ax_loss.plot(epochs, h['test_loss'], label=f'{name} Test Loss', linestyle='--')
+        if h.get('val_loss'):
+            ax_loss.plot(epochs, h['val_loss'], label=f'{name} Val Loss', linestyle='--')
         if h.get('train_acc'):
             ax_acc.plot(epochs, h['train_acc'], label=f'{name} Train Acc', linestyle='-')
-        if h.get('test_acc'):
-            ax_acc.plot(epochs, h['test_acc'], label=f'{name} Test Acc', linestyle='--')
+        if h.get('val_acc'):
+            ax_acc.plot(epochs, h['val_acc'], label=f'{name} Val Acc', linestyle='--')
 
     ax_loss.set_title('Loss Curves')
     ax_loss.set_xlabel('Epoch')
