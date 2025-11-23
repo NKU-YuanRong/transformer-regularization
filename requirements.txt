@@ -3,3 +3,4 @@ torchvision
 vit-pytorch
 wandb
 tqdm
+matplotlib
