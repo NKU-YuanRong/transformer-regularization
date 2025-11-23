@@ -1,6 +1,7 @@
 import torch
 import wandb
 from tqdm import tqdm
+from src.utils import mixup_data, mixup_criterion
 
 class Trainer:
     def __init__(self, model, optimizer, criterion, device, scheduler=None):
@@ -10,10 +11,10 @@ class Trainer:
         self.device = device
         self.scheduler = scheduler
 
-    def fit(self, train_loader, test_loader, epochs, use_mixup=False):
+    def fit(self, train_loader, test_loader, epochs, use_mixup=False, mixup_alpha=0.4):
         history = { 'train_loss': [], 'train_acc': [], 'test_loss': [], 'test_acc': [] }
         for epoch in range(epochs):
-            train_loss, train_acc = self.train_one_epoch(train_loader, use_mixup)
+            train_loss, train_acc = self.train_one_epoch(train_loader, use_mixup, mixup_alpha)
             test_loss, test_acc = self.evaluate(test_loader)
 
             history['train_loss'].append(train_loss)
@@ -31,7 +32,7 @@ class Trainer:
 
         return history
 
-    def train_one_epoch(self, loader, use_mixup):
+    def train_one_epoch(self, loader, use_mixup, mixup_alpha=0.4):
         self.model.train()
         running_loss = 0.0
         correct = 0
@@ -42,17 +43,16 @@ class Trainer:
 
             # MEMBER 3 TASK: Implement MixUp Logic here
             if use_mixup:
-                # 1. Generate lambda (mixing ratio) from beta dist
-                # 2. Mix images: mixed_images = lam * images + (1 - lam) * images_flipped
-                # 3. Mix labels (handled in loss calculation usually)
-                # For now, we pass, Member 3 needs to write this!
-                pass 
+                images, targets_a, targets_b, lam = mixup_data(images, labels, alpha=mixup_alpha, device=self.device)
 
             self.optimizer.zero_grad()
             outputs = self.model(images)
             
-            # Calculate Loss
-            loss = self.criterion(outputs, labels)
+            # Calculate Loss (support MixUp loss when enabled)
+            if use_mixup:
+                loss = mixup_criterion(self.criterion, outputs, targets_a, targets_b, lam)
+            else:
+                loss = self.criterion(outputs, labels)
             
             loss.backward()
             self.optimizer.step()
@@ -60,7 +60,12 @@ class Trainer:
             running_loss += loss.item()
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            # When using mixup, `labels` may not correspond to the mixed targets;
+            # we approximate accuracy using targets_a which is one of the paired targets.
+            if use_mixup:
+                correct += (predicted == targets_a).sum().item()
+            else:
+                correct += (predicted == labels).sum().item()
 
         return running_loss / len(loader), 100 * correct / total
 
